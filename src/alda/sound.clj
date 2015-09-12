@@ -139,27 +139,15 @@
         [m s] (map #(Double. %) (if b [a b] [0 a]))]
     (* (+ (* 60 m) s) 1000)))
 
-(defn start-finish-times [{:keys [start finish]}]
+(defn start-finish-times [{:keys [start finish]} markers]
   (let [start-kw?  (keyword? start)
         finish-kw? (keyword? finish)
-        markers    (when (or start-kw? finish-kw?)
-                     ((resolve 'alda.lisp/markers)
-                      @(resolve 'alda.lisp/*events*)))
         lookup     (fn [time]
                      (cond (nil? time)
                            nil
                            (keyword? time)
-                           (let [base (or (markers (name time))
-                                          (throw (Exception. (str "Marker " time " not found."))))
-                                 earliest (or (apply min (map :offset
-                                                              ((resolve 'alda.lisp/event-set)
-                                                               {:start
-                                                                {:offset (@(resolve 'alda.lisp/->AbsoluteOffset) 0)
-                                                                 :events  ((resolve 'alda.lisp/event-set)
-                                                                           @(resolve 'alda.lisp/*events*))}})))
-                                              0)]
-                             (prn earliest)
-                             (- base earliest))
+                           (or (markers (name time))
+                               (throw (Exception. (str "Marker " time " not found."))))
 
                            (string? time)
                            (parse-time time)
@@ -176,7 +164,7 @@
 
    Returns a function that, when called mid-playback, will stop any further
    events from playing."
-  [{:keys [events instruments] :as score}]
+  [{:keys [events markers instruments] :as score}]
   (let [{:keys [pre-buffer post-buffer one-off? async?]} *play-opts*
         audio-types (determine-audio-types score)
         _           (set-up! audio-types score)
@@ -184,7 +172,7 @@
         pool        (mk-pool)
         playing?    (atom true)
         begin       (+ (now) (or pre-buffer 0))
-        [start end] (start-finish-times *play-opts*)
+        [start end] (start-finish-times *play-opts* markers)
         events      (shift-events events start end)]
     (doseq [{:keys [offset instrument] :as event} events
             :let [instrument (-> instrument instruments)]]
