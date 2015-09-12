@@ -85,6 +85,20 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn shift-events
+  [events offset cut-off]
+  ;; TODO: need to handle offset/cut-off being labels instead of times
+  (let [offset  (or offset 0)
+        cut-off (when cut-off (- cut-off offset))
+        keep?   (if cut-off
+                  #(and (<= 0 %) (> cut-off %))
+                  #(<= 0 %))]
+    (sequence (comp (map #(update-in % [:offset] - offset))
+                    (filter (comp keep? :offset)))
+              events)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmulti play-event!
   "Plays a note/event, using the appropriate method based on the type of the
    instrument."
@@ -121,7 +135,6 @@
 
 (def ^:dynamic *play-opts* {})
 
-; TODO: control where to start and stop playing using the start & end keys
 (defn play!
   "Plays an Alda score, optionally from given start/end marks.
 
@@ -135,6 +148,7 @@
         pool        (mk-pool)
         playing?    (atom true)
         begin       (+ (now) (or pre-buffer 0))
+        events      (shift-events events start end)]
     (doseq [{:keys [offset instrument] :as event} events
             :let [instrument (-> instrument instruments)]]
       (future

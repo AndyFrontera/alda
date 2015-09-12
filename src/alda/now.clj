@@ -11,33 +11,20 @@
 
 (def set-up! sound/set-up!)
 
-(defn shift-events
-  [events offset cut-off]
-  (let [keep? (if cut-off
-                #(and (<= 0 %) (> cut-off %))
-                #(<= 0 %))]
-    (sequence (comp (map #(update-in % [:offset] - offset))
-                    (filter (comp keep? :offset)))
-              events)))
-
 (defn- normalize-events
   "Remove events outside of [start,end), if they are present.
    Shift the remaining events such that the earliest event occurs at 0.
    Returns a lazy seq of events."
-  [events start end]
-  ;; TODO: handle play-opts being labels
-  (let [earliest (apply min (map :offset events))
-        offset   (+ earliest (or start 0))
-        cut-off  (when end (- end offset))]
-    (shift-events events offset cut-off)))
+  [events]
+  (let [earliest (apply min (map :offset events))]
+    (alda.sound/shift-events events earliest nil)))
 
 (defn play-new-events!
-  [events play-opts]
-  (let [{:keys [start end]} play-opts
-        events (lisp/event-set {:start
+  [events]
+  (let [events (lisp/event-set {:start
                                 {:offset (lisp/->AbsoluteOffset 0)
                                  :events events}})
-        shifted (normalize-events events start end)
+        shifted (normalize-events events)
         one-off-score (assoc (lisp/score-map)
                              :events shifted)]
     (sound/play! one-off-score)))
@@ -50,7 +37,7 @@
          new-events# (set/difference
                        (:events new-score#)
                        (:events old-score#))]
-     (play-new-events! new-events# alda.sound/*play-opts*)))
+     (play-new-events! new-events#)))
 
 (defn refresh!
   "Clears all events and resets the current-offset of each instrument to 0.
