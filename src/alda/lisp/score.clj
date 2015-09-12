@@ -18,7 +18,7 @@
 (defn score*
   []
   (letfn [(init [var val] (alter-var-root var (constantly val)))]
-    (init #'*score-text* "") 
+    (init #'*score-text* "")
     (init #'*events* {:start {:offset (AbsoluteOffset. 0), :events []}})
     (init #'*global-attributes* {})
     (init #'*instruments* {})

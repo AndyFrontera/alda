@@ -65,3 +65,24 @@
                        :score (cons 'do (rest parsed))
                        parsed)))
     (boolean parsed)))
+
+
+(def piece "piano: c d e %apple a f g\n
+            violin: @apple c a %snail b")
+
+#_ (alda.lisp/score*)
+
+#_(clojure.pprint/pprint
+   (alda.parser/parse-input piece))
+
+#_(binding [alda.lisp/*score-text* piece]
+  (alda.repl.commands/repl-command "play" "from :apple to :snail"))
+
+#_(binding [alda.sound/*play-opts* {:start :apple :end :snail :async? true}]
+    (alda.repl.core/interpret! piece))
+
+#_(binding [alda.sound/*play-opts* {:start 0 :async? true}]
+    (alda.repl.core/interpret! piece))
+
+#_(binding [alda.sound/*play-opts* {:start "0:00.5" :async? true}]
+    (alda.repl.core/interpret! piece))
