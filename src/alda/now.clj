@@ -38,8 +38,9 @@
          new-events# (set/difference
                        (:events new-score#)
                        (:events old-score#))]
-     (binding [alda.sound/*play-opts* {:async? true}] 
-       (play-new-events! new-events#))))
+     (binding [alda.sound/*play-opts* (assoc (when (bound? #'alda.sound/*play-opts*)
+                                               alda.sound/*play-opts*)
+                                             :async? true)]
 
 (defn refresh!
   "Clears all events and resets the current-offset of each instrument to 0.
