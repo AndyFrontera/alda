@@ -11,23 +11,35 @@
 
 (def set-up! sound/set-up!)
 
-(defn- asap
-  "Tranforms a set of events by making the first one start at offset 0,
-   maintaining the intervals between the offsets of all the events."
-  [events]
-  (if (empty? events) 
-    events
-    (let [earliest (apply min (map :offset events))]
-      (into #{}
-        (map #(update-in % [:offset] - earliest) events)))))
+(defn shift-events
+  [events offset cut-off]
+  (let [keep? (if cut-off
+                #(and (<= 0 %) (> cut-off %))
+                #(<= 0 %))]
+    (sequence (comp (map #(update-in % [:offset] - offset))
+                    (filter (comp keep? :offset)))
+              events)))
+
+(defn- normalize-events
+  "Remove events outside of [start,end), if they are present.
+   Shift the remaining events such that the earliest event occurs at 0.
+   Returns a lazy seq of events."
+  [events start end]
+  ;; TODO: handle play-opts being labels
+  (let [earliest (apply min (map :offset events))
+        offset   (+ earliest (or start 0))
+        cut-off  (when end (- end offset))]
+    (shift-events events offset cut-off)))
 
 (defn play-new-events!
-  [events]
-  (let [one-off-score 
-        (assoc (lisp/score-map)
-               :events (asap (lisp/event-set
-                               {:start {:offset (lisp/->AbsoluteOffset 0)
-                                        :events events}})))]
+  [events play-opts]
+  (let [{:keys [start end]} play-opts
+        events (lisp/event-set {:start
+                                {:offset (lisp/->AbsoluteOffset 0)
+                                 :events events}})
+        shifted (normalize-events events start end)
+        one-off-score (assoc (lisp/score-map)
+                             :events shifted)]
     (sound/play! one-off-score)))
 
 (defmacro play!
