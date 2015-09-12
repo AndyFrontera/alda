@@ -27,8 +27,8 @@
    e.g. for MIDI, create and open a MIDI synth."
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doall 
-      (pmap #(set-up! % score) audio-type))
+    (doseq [a-t audio-type]
+      (future (set-up! a-t score)))
     (when-not (set-up? audio-type)
       (set-up-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* conj audio-type))))
@@ -54,8 +54,8 @@
    added to the score between calls to `play!`, when using Alda live.)"
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doall 
-      (pmap #(refresh! % score) audio-type))
+    (doseq [a-t audio-type]
+      (future (refresh! a-t score)))
     (when (set-up? audio-type)
       (refresh-audio-type! audio-type score))))
 
@@ -77,8 +77,8 @@
    e.g. for MIDI, close the MIDI synth."
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doall 
-      (pmap #(tear-down! % score) audio-type))
+    (doseq [a-t audio-type]
+      (future (tear-down! a-t score)))
     (when (set-up? audio-type)
       (tear-down-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* disj audio-type))))
@@ -135,13 +135,14 @@
         pool        (mk-pool)
         playing?    (atom true)
         start       (+ (now) (or pre-buffer 0))]
-    (doall (pmap (fn [{:keys [offset instrument] :as event}]
-                   (let [instrument (-> instrument instruments)]
-                     (at (+ start offset) 
-                         #(when @playing? 
-                            (play-event! event instrument)) 
-                         pool)))
-                 events))
+    (doseq [{:keys [offset instrument] :as event} events
+            :let [instrument (-> instrument instruments)]]
+      (future
+        (at (+ start offset)
+            #(when @playing?
+               (play-event! event instrument))
+            pool)))
+
     (when-not async?
       ; block until the score is done playing
       (Thread/sleep (+ (score-length score)
