@@ -42,7 +42,7 @@
 
 (defn refresh!
   "Clears all events and resets the current-offset of each instrument to 0.
-   
+
    Useful for playing a new set of notes with multiple instrument parts,
    ensuring that both parts start at the same time, regardless of any prior
    difference in current-offset between the instrument parts."
@@ -50,7 +50,7 @@
   (alter-var-root #'alda.lisp/*instruments*
     #(into {}
        (map (fn [[instrument attrs]]
-              [instrument 
+              [instrument
                (assoc attrs :current-offset (lisp/->AbsoluteOffset 0)
                             :last-offset (lisp/->AbsoluteOffset 0))])
             %)))

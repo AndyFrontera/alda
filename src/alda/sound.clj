@@ -15,7 +15,7 @@
 
 (defmethod set-up-audio-type! :default
   [audio-type & [score]]
-  (log/errorf "No implementation of set-up-audio-type! defined for type %s" 
+  (log/errorf "No implementation of set-up-audio-type! defined for type %s"
               audio-type))
 
 (defmethod set-up-audio-type! :midi
@@ -29,7 +29,7 @@
   (if (coll? audio-type)
     (doall 
       (pmap #(set-up! % score) audio-type))
-    (when-not (set-up? audio-type) 
+    (when-not (set-up? audio-type)
       (set-up-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* conj audio-type))))
 
@@ -40,7 +40,7 @@
 
 (defmethod refresh-audio-type! :default
   [audio-type & [score]]
-  (log/errorf "No implementation of refresh-audio-type! defined for type %s" 
+  (log/errorf "No implementation of refresh-audio-type! defined for type %s"
               audio-type))
 
 (defmethod refresh-audio-type! :midi
@@ -56,7 +56,7 @@
   (if (coll? audio-type)
     (doall 
       (pmap #(refresh! % score) audio-type))
-    (when (set-up? audio-type) 
+    (when (set-up? audio-type)
       (refresh-audio-type! audio-type score))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,7 +79,7 @@
   (if (coll? audio-type)
     (doall 
       (pmap #(tear-down! % score) audio-type))
-    (when (set-up? audio-type) 
+    (when (set-up? audio-type)
       (tear-down-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* disj audio-type))))
 
@@ -124,7 +124,7 @@
 ; TODO: control where to start and stop playing using the start & end keys
 (defn play!
   "Plays an Alda score, optionally from given start/end marks.
-   
+
    Returns a function that, when called mid-playback, will stop any further
    events from playing."
   [{:keys [events instruments] :as score}]
@@ -144,15 +144,16 @@
                  events))
     (when-not async?
       ; block until the score is done playing
-      (Thread/sleep (+ (score-length score) 
+      (Thread/sleep (+ (score-length score)
                        (or pre-buffer 0)
                        (or post-buffer 0))))
     (when one-off? (tear-down! audio-types score))
     #(reset! playing? false)))
 
 (defn make-wav!
-  "Parses an input file and saves the resulting sound data as a wav file, 
+  "Parses an input file and saves the resulting sound data as a wav file,
    using the specified options."
   [input-file output-file {:keys [start end]}]
   (let [target-file (check-for output-file)]
-    (comment "To do.")))
+    ;; TODO
+    nil))
