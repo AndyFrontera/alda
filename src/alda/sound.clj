@@ -87,7 +87,6 @@
 
 (defn shift-events
   [events offset cut-off]
-  ;; TODO: need to handle offset/cut-off being labels instead of times
   (let [offset  (or offset 0)
         cut-off (when cut-off (- cut-off offset))
         keep?   (if cut-off
@@ -135,19 +134,57 @@
 
 (def ^:dynamic *play-opts* {})
 
+(defn parse-time [time-str]
+  (let [[a b] (clojure.string/split time-str #":")
+        [m s] (map #(Double. %) (if b [a b] [0 a]))]
+    (* (+ (* 60 m) s) 1000)))
+
+(defn start-finish-times [{:keys [start finish]}]
+  (let [start-kw?  (keyword? start)
+        finish-kw? (keyword? finish)
+        markers    (when (or start-kw? finish-kw?)
+                     ((resolve 'alda.lisp/markers)
+                      @(resolve 'alda.lisp/*events*)))
+        lookup     (fn [time]
+                     (cond (nil? time)
+                           nil
+                           (keyword? time)
+                           (let [base (or (markers (name time))
+                                          (throw (Exception. (str "Marker " time " not found."))))
+                                 earliest (or (apply min (map :offset
+                                                              ((resolve 'alda.lisp/event-set)
+                                                               {:start
+                                                                {:offset (@(resolve 'alda.lisp/->AbsoluteOffset) 0)
+                                                                 :events  ((resolve 'alda.lisp/event-set)
+                                                                           @(resolve 'alda.lisp/*events*))}})))
+                                              0)]
+                             (prn earliest)
+                             (- base earliest))
+
+                           (string? time)
+                           (parse-time time)
+
+                           (number? time)
+                           time
+
+                           :else
+                           (throw (Exception. (str "Do not support " (type time) " as a play time.")))))]
+    (map lookup [start finish])))
+
 (defn play!
   "Plays an Alda score, optionally from given start/end marks.
 
    Returns a function that, when called mid-playback, will stop any further
    events from playing."
   [{:keys [events instruments] :as score}]
-  (let [{:keys [start end pre-buffer post-buffer one-off? async?]} *play-opts*
+  (let [{:keys [pre-buffer post-buffer one-off? async?]} *play-opts*
         audio-types (determine-audio-types score)
         _           (set-up! audio-types score)
         _           (refresh! audio-types score)
         pool        (mk-pool)
         playing?    (atom true)
         begin       (+ (now) (or pre-buffer 0))
+        [start end] (start-finish-times *play-opts*)
         events      (shift-events events start end)]
     (doseq [{:keys [offset instrument] :as event} events
             :let [instrument (-> instrument instruments)]]
