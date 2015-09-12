@@ -1,5 +1,13 @@
 (ns alda.util
-  (:import (java.io File)))
+  (:import [java.io File])
+  (:require [clojure.string :as str]))
+
+(defn parse-time [time-str]
+  (let [[s m h] (as-> (str/split time-str #":") x
+                      (reverse x)
+                      (map #(Double/parseDouble %) x)
+                      (concat x [0 0 0]))]
+    (* (+ (* 60 (+ (* 60 h) m)) s) 1000)))
 
 (defn check-for
   "Checks to see if a given file already exists. If it does, prompts the user

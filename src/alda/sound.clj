@@ -2,7 +2,7 @@
   (:require [alda.sound.midi :as    midi]
             [overtone.at-at  :refer (mk-pool now at)]
             [taoensso.timbre :as    log]
-            [alda.util       :refer (check-for)]))
+            [alda.util       :refer [check-for parse-time]]))
 
 (def ^:dynamic *active-audio-types* #{})
 
@@ -133,11 +133,6 @@
          (:type config))))
 
 (def ^:dynamic *play-opts* {})
-
-(defn parse-time [time-str]
-  (let [[a b] (clojure.string/split time-str #":")
-        [m s] (map #(Double. %) (if b [a b] [0 a]))]
-    (* (+ (* 60 m) s) 1000)))
 
 (defn start-finish-times [{:keys [start finish]} markers]
   (let [start-kw?  (keyword? start)
