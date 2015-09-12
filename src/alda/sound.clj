@@ -134,11 +134,11 @@
         _           (refresh! audio-types score)
         pool        (mk-pool)
         playing?    (atom true)
-        start       (+ (now) (or pre-buffer 0))]
+        begin       (+ (now) (or pre-buffer 0))
     (doseq [{:keys [offset instrument] :as event} events
             :let [instrument (-> instrument instruments)]]
       (future
-        (at (+ start offset)
+        (at (+ begin offset)
             #(when @playing?
                (play-event! event instrument))
             pool)))
