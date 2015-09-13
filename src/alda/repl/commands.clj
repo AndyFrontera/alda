@@ -1,12 +1,14 @@
 (ns alda.repl.commands
   (:require [alda.lisp               :refer :all]
+            [alda.now                :as    now]
             [alda.parser             :refer (parse-input)]
             [alda.repl.core          :as    repl :refer (*repl-reader*
                                                          *parsing-context*)]
-            [alda.now                :as    now]
+            [alda.sound              :as    sound]
+            [alda.util               :as    util]
             [boot.from.io.aviso.ansi :refer (bold)]
-            [clojure.string          :as    str]
             [clojure.pprint          :refer (pprint)]
+            [clojure.string          :as    str]
             [instaparse.core         :as    insta]))
 
 (defn huh? []
@@ -64,14 +66,15 @@
 
 (defcommand play
   "Plays the current score.
-   
-   TODO: support `from` and `to` arguments (as markers or minute/second marks)"
+   Can take `from` and `to` arguments, in the form of markers or mm:ss times."
   [rest-of-line]
   (if (empty? *score-text*)
-    (println "You must first create or :load a score.")  
-    (do
+    (println "You must first create or :load a score.")
+    (let [{:keys [from to]} (util/parse-str-opts rest-of-line)
+          [from to] (map util/parse-position [from to])]
       (now/refresh!)
-      (repl/interpret! *score-text*))))
+      (sound/with-play-opts (util/strip-nil-values {:start from, :end to})
+        (repl/interpret! *score-text*)))))
 
 (defcommand load
   "Load an Alda score into the current REPL session."

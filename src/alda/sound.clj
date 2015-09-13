@@ -134,6 +134,12 @@
 
 (def ^:dynamic *play-opts* {})
 
+(defmacro with-play-opts
+  "Update *play-opts* w"
+  [opts & body]
+  `(binding [*play-opts* (merge *play-opts* ~opts)]
+     ~@body))
+
 (defn start-finish-times [{:keys [start finish]} markers]
   (let [start-kw?  (keyword? start)
         finish-kw? (keyword? finish)

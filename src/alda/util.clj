@@ -2,12 +2,38 @@
   (:import [java.io File])
   (:require [clojure.string :as str]))
 
-(defn parse-time [time-str]
+(defn strip-nil-values
+  "Strip `nil` values from a map."
+  [hsh]
+  (into (empty hsh) (remove (comp nil? last)) hsh))
+
+(defn parse-str-opts
+  "Transform string based keyword arguments into a regular map, eg.
+   IN:  \"start 0:20 finish :third-movement some-junk-at-end\"
+   OUT: {:start  \"0:20\"
+         :finish \":third-movement\"}"
+  [opts-str]
+  (let [pairs (partition 2 (str/split opts-str #"\s"))]
+    (into {} (map (fn [[k v]] [(keyword k) v])) pairs)))
+
+(defn parse-time
+  "Convert a human readable duration into milliseconds, eg. \"02:31\" => 151 000"
+  [time-str]
   (let [[s m h] (as-> (str/split time-str #":") x
                       (reverse x)
                       (map #(Double/parseDouble %) x)
                       (concat x [0 0 0]))]
     (* (+ (* 60 (+ (* 60 h) m)) s) 1000)))
+
+(defn parse-position
+  "Convert a string denoting a position in a song into the appropriate type.
+   For explicit timepoints this is a double denoting milliseconds, and for
+   markers this is a keyword."
+  [position-str]
+  (when position-str
+    (if (.startsWith position-str ":")
+      (keyword (subs position-str 1))
+      (parse-time position-str))))
 
 (defn check-for
   "Checks to see if a given file already exists. If it does, prompts the user
