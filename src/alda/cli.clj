@@ -51,8 +51,8 @@
   (binding [alda.sound.midi/*midi-soundfont* (when-not stock (fluid-r3!))
             alda.sound/*play-opts* {:pre-buffer  (or pre-buffer 0)
                                     :post-buffer (or post-buffer 1000)
-                                    :from        from
-                                    :to          to
+                                    :start       from
+                                    :finish      to
                                     :one-off?    true}]
     (if-not (or file code)
       (play "--help")
