@@ -2,6 +2,12 @@
   (:import [java.io File])
   (:require [clojure.string :as str]))
 
+(defmacro pdoseq
+  "A fairly efficient hybrid of `doseq` and `pmap`"
+  [binding & body]
+  `(doseq ~binding
+     (future ~@body)))
+
 (defn strip-nil-values
   "Strip `nil` values from a map."
   [hsh]

@@ -2,7 +2,7 @@
   (:require [alda.sound.midi :as    midi]
             [overtone.at-at  :refer (mk-pool now at)]
             [taoensso.timbre :as    log]
-            [alda.util       :refer [check-for parse-time]]))
+            [alda.util       :refer [check-for parse-time pdoseq]]))
 
 (def ^:dynamic *active-audio-types* #{})
 
@@ -27,8 +27,8 @@
    e.g. for MIDI, create and open a MIDI synth."
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doseq [a-t audio-type]
-      (future (set-up! a-t score)))
+    (pdoseq [a-t audio-type]
+      (set-up! a-t score))
     (when-not (set-up? audio-type)
       (set-up-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* conj audio-type))))
@@ -54,8 +54,8 @@
    added to the score between calls to `play!`, when using Alda live.)"
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doseq [a-t audio-type]
-      (future (refresh! a-t score)))
+    (pdoseq [a-t audio-type]
+      (refresh! a-t score))
     (when (set-up? audio-type)
       (refresh-audio-type! audio-type score))))
 
@@ -77,8 +77,8 @@
    e.g. for MIDI, close the MIDI synth."
   [audio-type & [score]]
   (if (coll? audio-type)
-    (doseq [a-t audio-type]
-      (future (tear-down! a-t score)))
+    (pdoseq [a-t audio-type]
+      (tear-down! a-t score))
     (when (set-up? audio-type)
       (tear-down-audio-type! audio-type score)
       (alter-var-root #'*active-audio-types* disj audio-type))))
@@ -175,13 +175,12 @@
         begin       (+ (now) (or pre-buffer 0))
         [start end] (start-finish-times *play-opts* markers)
         events      (shift-events events start end)]
-    (doseq [{:keys [offset instrument] :as event} events
+    (pdoseq [{:keys [offset instrument] :as event} events
             :let [instrument (-> instrument instruments)]]
-      (future
-        (at (+ begin offset)
-            #(when @playing?
-               (play-event! event instrument))
-            pool)))
+      (at (+ begin offset)
+          #(when @playing?
+             (play-event! event instrument))
+          pool))
 
     (when-not async?
       ; block until the score is done playing
