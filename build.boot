@@ -4,6 +4,7 @@
   :dependencies '[[org.clojure/clojure   "1.7.0"]
                   [org.clojure/tools.cli "0.3.1"]
                   [instaparse            "1.4.1"]
+                  [com.lucasbradstreet/instaparse-cljs "1.4.1.0"]
                   [adzerk/bootlaces      "0.1.12" :scope "test"]
                   [adzerk/boot-test      "1.0.4"  :scope "test"]
                   [com.taoensso/timbre   "4.1.1"]

@@ -1,10 +1,13 @@
 (ns alda.parser
-  (:require [instaparse.core :as insta]
-            [clojure.string :as str]
-            [clojure.java.io :as io]))
+  (:require 
+    [instaparse.core :as insta]
+    [clojure.string :as str]
+    #?(:clj [clojure.java.io :as io]))
+  (#?(:clj :require :cljs :require-macros) 
+    [alda.macros :refer (slurp-file)]))
 
 (def ^:private alda-parser
-  (insta/parser (io/resource "alda.bnf")))
+  (insta/parser (slurp-file "alda.bnf")))
 
 (defn parse-input
   "Parses a string of Alda code and turns it into Clojure code."
@@ -14,8 +17,10 @@
        (insta/transform
          {:name              #(hash-map :name %)
           :nickname          #(hash-map :nickname %)
-          :number            #(Integer/parseInt %)
-          :voice-number      #(Integer/parseInt %)
+          :number            #?(:clj  #(Integer/parseInt %)
+                                :cljs #(js/parseInt %))
+          :voice-number      #?(:clj  #(Integer/parseInt %)
+                                :cljs #(js/parseInt %)) 
           :tie               (constantly :tie)
           :slur              (constantly :slur)
           :flat              (constantly :flat)
